@@ -15,7 +15,7 @@ struct ReportForm: View {
 
     var body: some View {
         Form {
-            Section("Report a Bug or Idea") {
+            Section("Describe the issue") {
                 TextField("Title", text: $title)
                 TextEditor(text: $description)
                     .frame(minHeight: 120)
@@ -31,5 +31,6 @@ struct ReportForm: View {
             }
         }
         .disabled(submissionState == .submitting)
+        .padding()
     }
 }

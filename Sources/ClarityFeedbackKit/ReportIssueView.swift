@@ -25,7 +25,7 @@ public struct ReportIssueView: View {
     public var body: some View {
         NavigationStack {
             ReportIssueContent(title: $title, description: $description, submissionState: submissionState)
-                .navigationTitle("Report a Bug")
+                .navigationTitle(submissionState == .idle ? "Send feedback" : "Feedback sent")
                 .toolbar {
                     ReportIssueToolbar(
                         submissionState: submissionState,
