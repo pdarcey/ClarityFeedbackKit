@@ -17,8 +17,18 @@ struct ReportForm: View {
         Form {
             Section("Describe the issue") {
                 TextField("Title", text: $title)
+                // A bare TextEditor has no border or background of its own, so its edges
+                // are effectively invisible inside a Form — especially in dark mode on
+                // macOS. Give it a visible container so it reads as an editable field.
                 TextEditor(text: $description)
                     .frame(minHeight: 120)
+                    .scrollContentBackground(.hidden)
+                    .padding(6)
+                    .background(.thinMaterial, in: .rect(cornerRadius: 8))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.secondary.opacity(0.3))
+                    }
             }
             Section("Included automatically") {
                 FeedbackMetadataFooter()

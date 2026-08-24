@@ -40,12 +40,29 @@ ClarityFeedback.configure(
 )
 ```
 
-Then present the ready-made form from anywhere:
+Then present the ready-made form from anywhere. `ReportIssueView` closes itself
+(Cancel/Done) using whatever dismissal mechanism matches how it's presented, so
+present it the idiomatic way for each platform rather than a single `.sheet`
+everywhere — a sheet reads as a modal interruption on macOS, where a
+self-contained form like this is normally its own window:
 
 ```swift
+// iOS/iPadOS — a sheet is the right call here.
 .sheet(isPresented: $showingReportSheet) {
     ReportIssueView()
 }
+```
+
+```swift
+// macOS — give it its own Window scene instead of a sheet...
+Window("Report a Bug", id: "report-issue") {
+    ReportIssueView()
+}
+
+// ...and open it with:
+@Environment(\.openWindow) private var openWindow
+// ...
+openWindow(id: "report-issue")
 ```
 
 That's the entire public API: `ClarityFeedback.configure(ingestURL:appToken:)`,
