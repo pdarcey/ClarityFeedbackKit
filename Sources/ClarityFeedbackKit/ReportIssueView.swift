@@ -4,7 +4,10 @@
    Created by Paul Darcey on 24/8/2026
    © 2026 Xerodonia Pty Ltd. All rights reserved
 ------------------------------------------------ */
+import OSLog
 import SwiftUI
+
+private let logger = Logger(subsystem: "com.xerodonia.ClarityFeedbackKit", category: "ReportIssueView")
 
 /// A ready-made "Report a Bug" form. Present it as a sheet from your app's UI — it handles
 /// submission, in-flight state, and success/error feedback itself. Call
@@ -25,7 +28,7 @@ public struct ReportIssueView: View {
     public var body: some View {
         NavigationStack {
             ReportIssueContent(title: $title, description: $description, submissionState: submissionState)
-                .navigationTitle(submissionState == .idle ? "Send feedback" : "Feedback sent")
+                .navigationTitle(submissionState == .succeeded ? "Feedback sent" : "Send feedback")
                 .toolbar {
                     ReportIssueToolbar(
                         submissionState: submissionState,
@@ -45,8 +48,11 @@ public struct ReportIssueView: View {
         submissionState = .submitting
         Task {
             do {
+                // The created issue's URL is for the developer, not the reporter — log it
+                // for diagnostics rather than surfacing it in the UI.
                 let url = try await FeedbackClient().submit(title: title, body: description)
-                submissionState = .succeeded(url)
+                logger.info("Feedback submitted as \(url.absoluteString)")
+                submissionState = .succeeded
             } catch {
                 submissionState = .failed(error.localizedDescription)
             }

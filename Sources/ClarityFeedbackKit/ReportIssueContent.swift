@@ -14,8 +14,8 @@ struct ReportIssueContent: View {
     let submissionState: SubmissionState
 
     var body: some View {
-        if case .succeeded(let url) = submissionState {
-            SubmissionSuccessView(url: url)
+        if submissionState == .succeeded {
+            SubmissionSuccessView()
         } else {
             ReportForm(title: $title, description: $description, submissionState: submissionState)
         }

@@ -10,6 +10,6 @@ import Foundation
 enum SubmissionState: Equatable, Sendable {
     case idle
     case submitting
-    case succeeded(URL)
+    case succeeded
     case failed(String)
 }

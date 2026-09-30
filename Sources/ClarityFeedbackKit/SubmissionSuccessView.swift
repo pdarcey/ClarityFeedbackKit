@@ -6,18 +6,16 @@
 ------------------------------------------------ */
 import SwiftUI
 
-/// Shown in place of the report form once a submission succeeds — confirms it worked and
-/// links straight to the created GitHub issue.
+/// Shown in place of the report form once a submission succeeds — confirms it worked.
+///
+/// Deliberately doesn't link to the created GitHub issue: that repo is the developer's
+/// internal plumbing (and may well be private), not something end users should see.
 struct SubmissionSuccessView: View {
-    let url: URL
-
     var body: some View {
         ContentUnavailableView {
             Label("Thanks for the report!", systemImage: "checkmark.circle")
         } description: {
             Text("Your report has been sent.")
-        } actions: {
-            Link("View on GitHub", destination: url)
         }
     }
 }

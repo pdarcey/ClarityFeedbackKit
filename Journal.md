@@ -60,6 +60,59 @@ The same integration also surfaced that a bare `TextEditor` has no visible borde
 - **Match an existing pattern in the surrounding codebase before inventing a new one**, even across a package boundary — `FeedbackClient`'s injectable `session`/`configurationProvider` shape deliberately mirrors `Database.importGitHubIssues(for:importer:tokenProvider:)` in the sibling Clarity project, for the same reason: consistency lets anyone who already knows one codebase immediately understand the other.
 - **A green test suite proves the internals are correct, not that the package is finished.** The platform-idiom bugs here (sheet/dismiss on macOS, invisible TextEditor) are exactly the class of thing no unit test written *for* the package would ever catch — only a real host app, on a real platform, actually presenting the thing.
 
+### Weekly Docs Pass Found One Real Gap, One Stale Comment (25 August 2026)
+
+The scheduled docs-freshness sweep landed on a quiet week — `HEAD` was
+already the commit that last touched the docs, so there was no drift from
+new code to chase. But "nothing changed recently" isn't the same as
+"nothing to fix": a standing Clarity issue had already flagged that
+`configure(ingestURL:appToken:)`'s only example (`appToken: "<this app's
+ingest token>"`) shows the token as a bare string literal, with nothing in
+the README steering integrators away from hardcoding it — exactly the
+mistake a later audit of RomanX turned up for real. Added a "Handling the
+ingest token" section to the README with a build-setting/`Info.plist`
+pattern instead. Small reminder that a docs pass isn't just "did the prose
+fall out of sync with the code" — the code and the docs can agree with each
+other and still both be quietly steering people toward a bad practice.
+
+Also found that `ReportIssueView`'s own doc comment still says to present
+it "as a sheet," a leftover from before the macOS-vs-iOS windowing fix
+(a81219b) made that platform-conditional everywhere else, including the
+README. Couldn't fix it directly — this pass is scoped to
+`README.md`/`Journal.md`/`CLAUDE.md` only, and that line lives in
+`Sources/` — so it's filed as a Clarity issue instead of silently ignored.
+
+### "Why Am I Being Sent to GitHub?" (30 September 2026)
+
+Real users sending real reports turned up something that looked perfectly
+sensible from the developer's chair: the success screen had a "View on
+GitHub" button linking to the freshly created issue. For Paul, handy. For
+someone who just wanted to say "the export button is broken", it's a door
+into the kitchen — a developer tool they never asked about, on a site they
+may not have an account for, pointing at a repo that might well be private
+and 404 on them anyway. It's the restaurant equivalent of handing a diner
+the order ticket from the kitchen printer.
+
+The fix was mostly subtraction: the link is gone, and `SubmissionState`'s
+`.succeeded(URL)` became plain `.succeeded`, since the URL had only ever been
+riding along in the state to feed that one link. The URL didn't vanish,
+though — it now goes to `OSLog`, which is where developer-facing
+information belongs. Nice side effect: half of an open security issue
+(rendering an unvalidated relay-supplied URL as a tappable link) evaporated
+along with it. Code you delete can't be exploited.
+
+While in there, fixed a small title bug: the navigation title flipped to
+"Feedback sent" on *any* state other than `.idle` — including while the
+request was still in flight, and after it had failed. Comparing against
+`.succeeded` instead of `!= .idle` says what we actually mean. Lesson:
+"not the starting state" and "the success state" are only the same thing
+when there are exactly two states, and there were four.
+
+The test run also coughed up a one-off failure unrelated to the change —
+two suites racing on the global `ClarityFeedback` configuration, since
+`.serialized` only serialises within a suite, not across them. Filed rather
+than fixed, to keep this change focused.
+
 ## If I Were Starting Over...
 
 Would build the SDK's usage documentation *with* a platform split from the very first draft, rather than writing the obvious single-platform example first and fixing it after a real integration found the gap. The bug wasn't really in the code — `ReportIssueView` itself never assumed a presentation style — it was in the README steering the very first integration toward the wrong one.
