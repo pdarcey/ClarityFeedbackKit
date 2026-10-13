@@ -45,9 +45,11 @@ integration instructions, including how a host app should supply that token.
   handling (`dismissWindow()` vs `dismiss()`). macOS hosts are expected to
   present `ReportIssueView` in its own `Window` scene, not a sheet; iOS
   hosts use a sheet. Don't "fix" this to a single code path.
-- Everything except `ClarityFeedback`, `ReportIssueView`, and
-  `FeedbackClient.SubmissionError` is `internal` — the public surface is
-  deliberately just those three.
+- The public surface is deliberately just `ClarityFeedback.configure(ingestURL:appToken:)`,
+  `ClarityFeedback.isConfigured`, and `ReportIssueView` (its `init()`).
+  Everything else — including `FeedbackClient` and its nested
+  `SubmissionError` — is `internal`. Keep `README.md`'s "entire public API"
+  line in sync if this ever changes.
 - Swift Testing (not XCTest), matching the rest of this ecosystem
   (`ClarityStorage`, Clarity itself).
 - Logging via `OSLog`/`Logger` (subsystem
@@ -96,5 +98,15 @@ swiftlint
   `README.md`. Worth fixing next time `Sources/` is touched (tracked as a
   Clarity issue rather than fixed here, since doc-freshness passes are
   README/Journal/CLAUDE.md only and don't edit `Sources/`).
+- `ReportIssueView` never checks `ClarityFeedback.isConfigured` itself; an
+  unconfigured submission surfaces `SubmissionError.notConfigured`'s
+  developer-facing message ("ClarityFeedback.configure(…) hasn't been called
+  yet.") directly to end users. The README tells hosts to gate their entry
+  point on `isConfigured` for this reason.
+- `ClarityFeedback`'s configuration is process-global. `.serialized` only
+  serialises tests *within* a suite, so suites that touch the global config
+  can occasionally race each other under `swift test`. Prefer injecting
+  `configurationProvider` into `FeedbackClient` in tests over calling
+  `configure(...)`.
 - See `Journal.md` for the fuller story behind each of these decisions,
   including the bugs that surfaced them.

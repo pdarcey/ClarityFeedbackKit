@@ -54,12 +54,6 @@ Everything above passed `swift test` cleanly and built on both macOS and iOS. No
 
 The same integration also surfaced that a bare `TextEditor` has no visible border or background of its own — invisible in a `Form`, especially bad in dark mode — fixed with a `.thinMaterial` background and a subtle stroke border around it.
 
-## Engineer's Wisdom
-
-- **A credential's scope should match its exposure.** This package never holds anything more powerful than a single per-app token that can only create issues on one repo, because it's the one component of the system that actually ships to end-users.
-- **Match an existing pattern in the surrounding codebase before inventing a new one**, even across a package boundary — `FeedbackClient`'s injectable `session`/`configurationProvider` shape deliberately mirrors `Database.importGitHubIssues(for:importer:tokenProvider:)` in the sibling Clarity project, for the same reason: consistency lets anyone who already knows one codebase immediately understand the other.
-- **A green test suite proves the internals are correct, not that the package is finished.** The platform-idiom bugs here (sheet/dismiss on macOS, invisible TextEditor) are exactly the class of thing no unit test written *for* the package would ever catch — only a real host app, on a real platform, actually presenting the thing.
-
 ### Weekly Docs Pass Found One Real Gap, One Stale Comment (25 August 2026)
 
 The scheduled docs-freshness sweep landed on a quiet week — `HEAD` was
@@ -112,6 +106,47 @@ The test run also coughed up a one-off failure unrelated to the change —
 two suites racing on the global `ClarityFeedback` configuration, since
 `.serialized` only serialises within a suite, not across them. Filed rather
 than fixed, to keep this change focused.
+
+### The README Was Promising a Safe It Didn't Have (4 October 2026)
+
+Another quiet week for code (nothing new since 30 September), so this
+docs sweep checked the integration story itself, line by line. Two things
+turned up.
+
+First, the "Handling the ingest token" section suggested that moving the
+token out of a string literal and into an `.xcconfig`-fed `Info.plist` key
+would stop it being extractable from the binary. It doesn't. An `Info.plist`
+value ships inside the app bundle just like a literal does. It's a bit like
+moving the spare key from under the doormat to under the pot plant: it's
+out of git history, which is what actually matters, but anyone who goes
+looking will still find it. The real protection was there all along in the
+design: the token can only create issues on one repo, and the relay can
+revoke it. The README now says that honestly instead of implying the token
+is hidden.
+
+Second, the README's sample code called `fatalError` when the token was
+missing. That would crash any contributor's build without the secret
+`.xcconfig`. It also ignored `ClarityFeedback.isConfigured`, which exists
+for exactly this case. The README now shows the gentler pattern: skip
+`configure`, then hide the "Report a Bug" button. There's a less obvious
+reason this matters. `ReportIssueView` doesn't check configuration itself,
+so an unconfigured submission shows end users the developer-facing message
+"ClarityFeedback.configure(…) hasn't been called yet." Gating the entry
+point keeps that message away from users.
+
+Smaller fix: `CLAUDE.md` listed `FeedbackClient.SubmissionError` as public
+API. It isn't, because it's nested inside the `internal` `FeedbackClient`,
+and Swift won't make a nested type more visible than the type containing
+it. The README had it right; the two now agree. Also tidied this journal's
+own layout: the last two Journey entries had ended up under
+"Engineer's Wisdom", so they're back where they belong.
+
+## Engineer's Wisdom
+
+- **A credential's scope should match its exposure.** This package never holds anything more powerful than a single per-app token that can only create issues on one repo, because it's the one component of the system that actually ships to end-users.
+- **Match an existing pattern in the surrounding codebase before inventing a new one**, even across a package boundary — `FeedbackClient`'s injectable `session`/`configurationProvider` shape deliberately mirrors `Database.importGitHubIssues(for:importer:tokenProvider:)` in the sibling Clarity project, for the same reason: consistency lets anyone who already knows one codebase immediately understand the other.
+- **A green test suite proves the internals are correct, not that the package is finished.** The platform-idiom bugs here (sheet/dismiss on macOS, invisible TextEditor) are exactly the class of thing no unit test written *for* the package would ever catch — only a real host app, on a real platform, actually presenting the thing.
+- **A client-side secret is never really secret, so plan around that.** Keep it out of git history, but design the system so that losing it doesn't matter much. Docs should say which of those two protections you're actually getting.
 
 ## If I Were Starting Over...
 
