@@ -141,6 +141,12 @@ it. The README had it right; the two now agree. Also tidied this journal's
 own layout: the last two Journey entries had ended up under
 "Engineer's Wisdom", so they're back where they belong.
 
+### A Logo, and Two Halves of One Docs Update (13 October 2026)
+
+The package got a logo: a bug inside a speech bubble, which is about as literal as a logo for "tell the developer about a bug" can be. It lives at the repo root as `logo.png` and `logo.svg` and shows under the README title.
+
+A small process lesson came with it. The README already had uncommitted edits from the 4 October docs sweep, so committing "the logo line" meant committing those too, while the matching `CLAUDE.md` and `Journal.md` edits stayed behind. For a few minutes one docs update was split across a commit and a working tree. Paul had them committed together straight after. Docs that were written together should be committed together; a half-committed docs pass is a small lie about what the repo knows.
+
 ## Engineer's Wisdom
 
 - **A credential's scope should match its exposure.** This package never holds anything more powerful than a single per-app token that can only create issues on one repo, because it's the one component of the system that actually ships to end-users.
