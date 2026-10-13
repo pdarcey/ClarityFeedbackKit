@@ -1,5 +1,7 @@
 # ClarityFeedbackKit
 
+<img src="logo.png" alt="ClarityFeedbackKit logo" width="128">
+
 A tiny Swift Package: embed it in an app so its users can send a bug report
 or idea straight to you, as a real GitHub Issue — which then gets pulled
 into [Clarity](../../Apps/Clarity/) automatically by its GitHub importer.
@@ -70,26 +72,55 @@ That's the entire public API: `ClarityFeedback.configure(ingestURL:appToken:)`,
 
 ### Handling the ingest token
 
-`appToken` is scoped to one repo's issues, but it's still a credential —
-don't commit it as a string literal the way the example above shows for
-brevity. If it ships in your source, it ships in the built binary too
-(extractable with `strings`) and in your git history if the repo is ever
-made public.
+You need two values from whoever runs the relay:
 
-Prefer pulling it in at build time instead, e.g. via an `.xcconfig` that
-injects an `Info.plist` key (kept out of source control) and reading it back
-at launch:
+| Value | What it is | Secret? |
+|---|---|---|
+| `ingestURL` | The relay's `/v1/feedback` endpoint | No — fine to keep in source |
+| `appToken` | This app's ingest token, issued once per app | Yes — keep it out of source control |
+
+`appToken` is scoped to creating issues on one repo, but it's still a
+credential — don't commit it as a string literal the way the example above
+shows for brevity. Anything committed to source ends up in your git history,
+which matters if the repo is ever shared or made public.
+
+Pull it in at build time instead, e.g. via an `.xcconfig` (kept out of source
+control) that sets a build setting, which an `Info.plist` key then
+references (`ClarityFeedbackAppToken` = `$(CLARITY_FEEDBACK_APP_TOKEN)`).
+Read it back at launch:
 
 ```swift
-guard let appToken = Bundle.main.object(forInfoDictionaryKey: "ClarityFeedbackAppToken") as? String else {
-    fatalError("Missing ClarityFeedbackAppToken — check your .xcconfig")
+init() {
+    let ingestURL = URL(string: "https://clarity-feedback-relay.<your-subdomain>.workers.dev/v1/feedback")!
+    if let appToken = Bundle.main.object(forInfoDictionaryKey: "ClarityFeedbackAppToken") as? String,
+       !appToken.isEmpty {
+        ClarityFeedback.configure(ingestURL: ingestURL, appToken: appToken)
+    }
 }
-ClarityFeedback.configure(ingestURL: ingestURL, appToken: appToken)
 ```
 
-Any equivalent scheme (keychain-provisioned, CI-injected build setting,
-etc.) works just as well — the point is keeping the token out of source and
-out of git history, the same way you'd handle a Sentry DSN or API key.
+If the token is missing (say, a contributor's build without the
+`.xcconfig`), skip `configure` rather than crashing, and use
+`ClarityFeedback.isConfigured` to hide your "Report a Bug" entry point:
+
+```swift
+if ClarityFeedback.isConfigured {
+    Button("Report a Bug…", systemImage: "ladybug") { openWindow(id: "report-issue") }
+}
+```
+
+This matters because `ReportIssueView` doesn't check configuration itself.
+An unconfigured submission fails with a developer-facing error message that
+your end users would see.
+
+Any equivalent scheme works just as well (a CI-injected build setting, for
+example). The point is to keep the token out of source and out of git history,
+the same way you'd handle a Sentry DSN.
+Build-time injection does **not** hide the token from the shipped app,
+though: it still ends up in the app bundle, and a determined user can extract
+it. That's acceptable only because the token can do so little (create issues
+on one repo) and the relay can revoke it per app. Never put anything more
+powerful, such as a GitHub PAT, in a host app.
 
 ## What it does
 
