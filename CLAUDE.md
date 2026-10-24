@@ -10,7 +10,7 @@ Clarity then imports that issue automatically via its own GitHub importer.
 
 The SDK never talks to GitHub directly and never holds a GitHub credential —
 only a per-app **ingest token** scoped to creating issues on one repo (same
-shape as a Sentry DSN). See `README.md` for the full data-flow diagram and
+shape as a Sentry DSN). See `Readme.md` for the full data-flow diagram and
 integration instructions, including how a host app should supply that token.
 
 ## Key architecture decisions
@@ -48,7 +48,7 @@ integration instructions, including how a host app should supply that token.
 - The public surface is deliberately just `ClarityFeedback.configure(ingestURL:appToken:)`,
   `ClarityFeedback.isConfigured`, and `ReportIssueView` (its `init()`).
   Everything else — including `FeedbackClient` and its nested
-  `SubmissionError` — is `internal`. Keep `README.md`'s "entire public API"
+  `SubmissionError` — is `internal`. Keep `Readme.md`'s "entire public API"
   line in sync if this ever changes.
 - Swift Testing (not XCTest), matching the rest of this ecosystem
   (`ClarityStorage`, Clarity itself).
@@ -95,7 +95,7 @@ swiftlint
 - `ReportIssueView`'s own doc comment currently says to present it "as a
   sheet from your app's UI" — that's stale relative to the platform-split
   guidance actually implemented in `ReportIssueToolbar` and documented in
-  `README.md`. Worth fixing next time `Sources/` is touched (tracked as a
+  `Readme.md`. Worth fixing next time `Sources/` is touched (tracked as a
   Clarity issue rather than fixed here, since doc-freshness passes are
   README/Journal/CLAUDE.md only and don't edit `Sources/`).
 - `ReportIssueView` never checks `ClarityFeedback.isConfigured` itself; an
