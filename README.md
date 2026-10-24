@@ -1,6 +1,15 @@
+---
+name: ClarityFeedbackKit
+description: A tiny Swift package that lets an app's users send a bug report or idea straight to the developer as a GitHub issue, which Clarity then imports automatically.
+version: "1.0.0"
+readmeUpdated: 2026-10-24
+tags:
+  - Package
+---
+
 # ClarityFeedbackKit
 
-<img src="logo.png" alt="ClarityFeedbackKit logo" width="128">
+<img src="logo.png" alt="ClarityFeedbackKit logo: a white speech bubble containing a dark teal bug, on a teal background" width="128" height="128" align="left" hspace="16">
 
 A tiny Swift Package: embed it in an app so its users can send a bug report
 or idea straight to you, as a real GitHub Issue — which then gets pulled
@@ -15,19 +24,28 @@ The SDK never talks to GitHub directly and never holds a GitHub credential —
 it POSTs to a relay you control, using a per-app **ingest token** (like a
 Sentry DSN). See `clarity-feedback-relay`'s README for how to issue tokens.
 
+<br clear="left">
+
 ## Requirements
 
 macOS 26+ / iOS 26+, Swift 6.2+.
 
 ## Installation
 
-Add as a local or git-hosted Swift Package dependency:
+Add it by URL (in Xcode: File › Add Package Dependencies…, or in a
+`Package.swift`):
 
 ```swift
-.package(path: "../ClarityFeedbackKit")
-// or, once pushed somewhere:
-// .package(url: "https://github.com/pdarcey/ClarityFeedbackKit", from: "1.0.0")
+.package(url: "https://github.com/pdarcey/ClarityFeedbackKit", from: "1.0.0")
 ```
+
+Then add the `ClarityFeedbackKit` library product to your **app** target.
+
+Prefer the URL form over a local path for anything you commit: a
+`.package(path: "../ClarityFeedbackKit")` dependency only resolves on a
+machine with the same folder layout, so it breaks CI (including Xcode Cloud).
+A local path is still handy for developing the package itself alongside a
+host app.
 
 ## Usage
 
@@ -41,6 +59,11 @@ ClarityFeedback.configure(
     appToken: "<this app's ingest token>"
 )
 ```
+
+`configure` is synchronous and thread-safe, so it's fine to call from an
+`App`'s `init()` (which isn't main-actor-isolated) or anywhere else. The
+configuration is only read when a report is submitted, and calling
+`configure` again replaces the previous values.
 
 Then present the ready-made form from anywhere. `ReportIssueView` closes itself
 (Cancel/Done) using whatever dismissal mechanism matches how it's presented, so
