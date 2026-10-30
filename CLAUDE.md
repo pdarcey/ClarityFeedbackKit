@@ -108,5 +108,14 @@ swiftlint
   can occasionally race each other under `swift test`. Prefer injecting
   `configurationProvider` into `FeedbackClient` in tests over calling
   `configure(...)`.
+- Host apps consume this package **by URL**
+  (`https://github.com/pdarcey/ClarityFeedbackKit`, `from: "1.0.0"`), and
+  SemVer tags are the release mechanism (`1.0.0` is the only tag so far).
+  Pushing to `main` alone doesn't ship anything to hosts. A change to
+  `Sources/` only reaches them once a new tag is cut, and any change to the
+  public API needs a version bump to match.
+- The test target doesn't link `ClarityTesting` (from `ClarityLinks`) yet,
+  although the ecosystem convention is to link it into every Swift Testing
+  target. Adding it means editing `Package.swift`.
 - See `Journal.md` for the fuller story behind each of these decisions,
   including the bugs that surfaced them.

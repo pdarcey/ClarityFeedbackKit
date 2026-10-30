@@ -25,7 +25,7 @@ Think of it like a hotel's guest-comment card system. The guest (end user) fills
 
 ## Tech Stack & Why
 
-- **Swift Package Manager, no Xcode project.** This has to be added as a dependency to unrelated apps in unrelated repos — a local-path package (like `ClarityStorage`) can't do that; this one needs to eventually live somewhere host apps can point at directly.
+- **Swift Package Manager, no Xcode project.** This has to be added as a dependency to unrelated apps in unrelated repos — a local-path package (like `ClarityStorage`) can't do that; this one needs to live somewhere host apps can point at directly. It now does: it's on GitHub at `pdarcey/ClarityFeedbackKit`, tagged `1.0.0`, and hosts depend on it by URL.
 - **macOS 26 / iOS 26 floor.** Not the plan's original placeholder (`.v14`/`.v17`) — Paul's own call, matching Clarity's own floor, since every host app is getting bumped to that anyway as the SDK gets added.
 - **Swift Testing, not XCTest.** Matches every other Swift package in this ecosystem (`ClarityStorage`).
 - **`Synchronization.Mutex` over `@MainActor`.** The one real architectural decision in this package — see below.
@@ -146,6 +146,14 @@ own layout: the last two Journey entries had ended up under
 The package got a logo: a bug inside a speech bubble, which is about as literal as a logo for "tell the developer about a bug" can be. It lives at the repo root as `logo.png` and `logo.svg` and shows under the README title.
 
 A small process lesson came with it. The README already had uncommitted edits from the 4 October docs sweep, so committing "the logo line" meant committing those too, while the matching `CLAUDE.md` and `Journal.md` edits stayed behind. For a few minutes one docs update was split across a commit and a working tree. Paul had them committed together straight after. Docs that were written together should be committed together; a half-committed docs pass is a small lie about what the repo knows.
+
+### The Package Moved Out, and the README Was Still Giving the Old Address (18 October 2026)
+
+Another quiet week for code: nothing has changed under `Sources/` since 30 September. What *had* changed was where the package lives. It's on GitHub now, with a `1.0.0` tag sitting on `HEAD`. The README's Installation section hadn't caught up. It still led with `.package(path: "../ClarityFeedbackKit")` and had the URL form commented out, "once pushed somewhere". That's like a café that's moved to a new street but still has the old address on its menus. The regulars find it fine; anyone new turns up at an empty shopfront.
+
+For a package, the old address does real damage. A local path resolves only on a machine whose folders happen to line up the same way, so a host app that copied the snippet would build on Paul's Mac and fail everywhere else, Xcode Cloud included. The URL form is now the main instruction, with the local path kept as a note for working on the package alongside a host app. The README also now spells out two things a consumer would otherwise have to read the source to learn: `configure` is safe to call from a non-main-actor `App.init()`, and the configuration is only read when a report is submitted.
+
+The lesson: once a package has a real release, the version tag is how anything actually ships. Pushing to `main` changes nothing for the apps that depend on it until a new tag is cut. That's now written down in `CLAUDE.md`, so a future change to `Sources/` doesn't quietly sit on `main` while the hosts carry on with `1.0.0`.
 
 ## Engineer's Wisdom
 
