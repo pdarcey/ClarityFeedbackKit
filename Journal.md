@@ -155,6 +155,14 @@ For a package, the old address does real damage. A local path resolves only on a
 
 The lesson: once a package has a real release, the version tag is how anything actually ships. Pushing to `main` changes nothing for the apps that depend on it until a new tag is cut. That's now written down in `CLAUDE.md`, so a future change to `Sources/` doesn't quietly sit on `main` while the hosts carry on with `1.0.0`.
 
+### One More Forwarding Address, and a Docs Pass That Couldn't Hold a Pen (31 October 2026)
+
+Still nothing new under `Sources/` since 30 September. The README's intro, though, still linked "Clarity" to `../../Apps/Clarity/`, a relative path that only made sense when this package sat in a folder next to the Clarity app on Paul's Mac. On GitHub it goes nowhere. It's the same "package moved out" story as 18 October: we'd changed the address on the menu but missed the one on the napkins. The link is now plain text, the way Clarity's own project description already had it.
+
+The first docs pass of the day spotted all this but couldn't write any of it: the worktree it ran in sat somewhere the harness guarded, so every edit needed an approval no one was awake to give. It filed the fixes as Clarity #681 instead, and this pass applied them. `CLAUDE.md` now names the issues behind its gotchas (#257 for the stale "present as a sheet" doc comment, #435 for the test race), and its OS-floor note follows the 30 October rule: new projects start on 27, older ones like this stay on 26 until they're next updated. It also gained a warning from that day's security audit (#680): the "never show GitHub" rule holds on the success screen, but on failure `ReportForm` shows whatever error text the relay sends back, word for word.
+
+The lesson: a gotcha that says "tracked in Clarity" without a number is a dead end. Whoever reads it has to go hunting. Put the number in.
+
 ## Engineer's Wisdom
 
 - **A credential's scope should match its exposure.** This package never holds anything more powerful than a single per-app token that can only create issues on one repo, because it's the one component of the system that actually ships to end-users.

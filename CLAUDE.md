@@ -78,10 +78,12 @@ swiftlint
 
 ## Quirks and gotchas
 
-- This package targets **macOS 26 / iOS 26 minimum**, not the repo
-  template's usual placeholder floor — matches Clarity's own floor, since
-  every host app embedding this SDK is being bumped to that OS floor
-  anyway.
+- This package targets **macOS 26 / iOS 26 minimum**, matching Clarity's
+  own floor. New projects have defaulted to iOS/macOS 27 since 30 Oct 2026,
+  but projects from before then stay on 26 until they're next updated, and
+  this is one of them. Raising the floor drops every host app still on 26,
+  so it needs its own decision and a version bump, not a drive-by edit to
+  `Package.swift`.
 - `DeviceInfo.appVersion` returns `nil` when there's no bundle version info
   at all (e.g. running under `swift test`, where there's no real app
   bundle) — this is expected, not a bug; `FeedbackMetadataFooter` and the
@@ -95,19 +97,23 @@ swiftlint
 - `ReportIssueView`'s own doc comment currently says to present it "as a
   sheet from your app's UI" — that's stale relative to the platform-split
   guidance actually implemented in `ReportIssueToolbar` and documented in
-  `Readme.md`. Worth fixing next time `Sources/` is touched (tracked as a
-  Clarity issue rather than fixed here, since doc-freshness passes are
+  `Readme.md`. Worth fixing next time `Sources/` is touched (tracked as
+  Clarity #257 rather than fixed here, since doc-freshness passes are
   README/Journal/CLAUDE.md only and don't edit `Sources/`).
 - `ReportIssueView` never checks `ClarityFeedback.isConfigured` itself; an
   unconfigured submission surfaces `SubmissionError.notConfigured`'s
   developer-facing message ("ClarityFeedback.configure(…) hasn't been called
   yet.") directly to end users. The README tells hosts to gate their entry
-  point on `isConfigured` for this reason.
+  point on `isConfigured` for this reason. More generally, *every*
+  `SubmissionError` message is shown verbatim by `ReportForm`, including
+  the relay's free-form `error` string and `URLError` descriptions, so a
+  relay that passes a GitHub API error through can break the "never show
+  GitHub" rule (Clarity #680).
 - `ClarityFeedback`'s configuration is process-global. `.serialized` only
   serialises tests *within* a suite, so suites that touch the global config
-  can occasionally race each other under `swift test`. Prefer injecting
-  `configurationProvider` into `FeedbackClient` in tests over calling
-  `configure(...)`.
+  can occasionally race each other under `swift test` (Clarity #435).
+  Prefer injecting `configurationProvider` into `FeedbackClient` in tests
+  over calling `configure(...)`.
 - Host apps consume this package **by URL**
   (`https://github.com/pdarcey/ClarityFeedbackKit`, `from: "1.0.0"`), and
   SemVer tags are the release mechanism (`1.0.0` is the only tag so far).

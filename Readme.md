@@ -2,7 +2,7 @@
 name: ClarityFeedbackKit
 description: A tiny Swift package that lets an app's users send a bug report or idea straight to the developer as a GitHub issue, which Clarity then imports automatically.
 version: "1.0.0"
-readmeUpdated: 2026-10-24
+readmeUpdated: 2026-10-31
 tags:
   - Package
 ---
@@ -13,7 +13,7 @@ tags:
 
 A tiny Swift Package: embed it in an app so its users can send a bug report
 or idea straight to you, as a real GitHub Issue — which then gets pulled
-into [Clarity](../../Apps/Clarity/) automatically by its GitHub importer.
+into Clarity automatically by its GitHub importer.
 
 ```
 Your app + ClarityFeedbackKit  →  clarity-feedback-relay  →  GitHub Issues  →  Clarity
