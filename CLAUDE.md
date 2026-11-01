@@ -44,7 +44,9 @@ integration instructions, including how a host app should supply that token.
   (`#if os(macOS)`), never assumed — see `ReportIssueToolbar`'s dismiss
   handling (`dismissWindow()` vs `dismiss()`). macOS hosts are expected to
   present `ReportIssueView` in its own `Window` scene, not a sheet; iOS
-  hosts use a sheet. Don't "fix" this to a single code path.
+  hosts use a sheet. Don't "fix" this to a single code path. The README
+  tells consumers about the `dismissWindow()` dependency, so keep it in step
+  if the dismiss handling ever changes.
 - The public surface is deliberately just `ClarityFeedback.configure(ingestURL:appToken:)`,
   `ClarityFeedback.isConfigured`, and `ReportIssueView` (its `init()`).
   Everything else — including `FeedbackClient` and its nested

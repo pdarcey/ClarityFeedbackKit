@@ -163,6 +163,16 @@ The first docs pass of the day spotted all this but couldn't write any of it: th
 
 The lesson: a gotcha that says "tracked in Clarity" without a number is a dead end. Whoever reads it has to go hunting. Put the number in.
 
+### Telling the Integrators What Only the Maintainers Knew (1 November 2026)
+
+A day after the last pass, and still nothing new under `Sources/` since 30 September, so this sweep read the README as a stranger would: someone adding the package to their app who has never opened `CLAUDE.md`. Two facts were written down for maintainers but not for consumers.
+
+First, `ReportIssueToolbar` closes the form with `dismissWindow()` on macOS. The README already *recommended* a `Window` scene there, but only on taste ("a sheet reads as a modal interruption"). It never said the Cancel and Done buttons are built for a window. That's like a hire car's manual saying "we suggest unleaded" when the engine was only ever tuned for unleaded. It now says so plainly.
+
+Second, the #680 warning: every error message, including whatever the relay sends back, lands in front of the user word for word. That had been in `CLAUDE.md` since 31 October, but the people who can actually act on it are the ones running a relay, and they read the README. It's there now too.
+
+The lesson: a gotcha recorded only in the maintainers' notes protects nobody downstream. For a package, ask of every warning: whose code would this go wrong in? Then put it in the doc *they* read.
+
 ## Engineer's Wisdom
 
 - **A credential's scope should match its exposure.** This package never holds anything more powerful than a single per-app token that can only create issues on one repo, because it's the one component of the system that actually ships to end-users.

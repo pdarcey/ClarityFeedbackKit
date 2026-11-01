@@ -2,7 +2,7 @@
 name: ClarityFeedbackKit
 description: A tiny Swift package that lets an app's users send a bug report or idea straight to the developer as a GitHub issue, which Clarity then imports automatically.
 version: "1.0.0"
-readmeUpdated: 2026-10-31
+readmeUpdated: 2026-11-01
 tags:
   - Package
 ---
@@ -90,6 +90,10 @@ Window("Report a Bug", id: "report-issue") {
 openWindow(id: "report-issue")
 ```
 
+On macOS, the form's Cancel and Done buttons close it with `dismissWindow()`,
+which is made for a window scene, not a sheet. Present it in its own `Window`
+as shown above. On iOS they use `dismiss()`, which is what closes a sheet.
+
 That's the entire public API: `ClarityFeedback.configure(ingestURL:appToken:)`,
 `ClarityFeedback.isConfigured`, and `ReportIssueView`.
 
@@ -153,6 +157,11 @@ URL with `Authorization: Bearer <appToken>`, then shows either a simple
 "Thanks for the report!" confirmation, or an inline error with the option
 to retry (there's no automatic retry or offline queue in v1 — if the POST
 fails, the user sees why and can try again).
+
+That inline error is shown to the user word for word. That includes the
+relay's own `error` string when it rejects a submission. So whoever runs the
+relay should make its error messages suitable for end users, and never pass
+a raw GitHub API error through.
 
 The confirmation deliberately doesn't link to the created GitHub issue —
 that repo is your internal plumbing (and may be private), not something your
