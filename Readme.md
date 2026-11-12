@@ -1,7 +1,7 @@
 ---
 name: ClarityFeedbackKit
 description: A tiny Swift package that lets an app's users send a bug report or idea straight to the developer as a GitHub issue, which Clarity then imports automatically.
-version: "1.0.0"
+version: "2.0.0"
 readmeUpdated: 2026-11-12
 tags:
   - Package
