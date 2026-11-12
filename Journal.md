@@ -173,6 +173,34 @@ Second, the #680 warning: every error message, including whatever the relay send
 
 The lesson: a gotcha recorded only in the maintainers' notes protects nobody downstream. For a package, ask of every warning: whose code would this go wrong in? Then put it in the doc *they* read.
 
+### 2.0.0: Nothing Secret in Code (12 November 2026)
+
+The weekly security audit had three findings waiting, and fixing them properly meant a major version.
+
+**Redirects (#679).** `URLSession.shared` follows redirects on its own, and a 307 keeps the method and
+the body, so a misrouted relay could have sent the report, and maybe the bearer token, somewhere else.
+Requests now go through `NoRedirectSession`, whose `NoRedirectDelegate` answers every redirect with
+`nil`; the 3xx comes back as a failure, and its `Location` goes to the log.
+
+**What users see (#680).** Every error used to be shown word for word, including whatever the relay
+said, which could have been GitHub's "Not Found: pdarcey/SomePrivateRepo". Now `SubmissionError`
+keeps the details for logs and tests, and users get one of three fixed sentences. Paul chose to give
+the rate limit the same generic message as any other relay failure.
+
+**The token (#255).** The old API took the token as a string, which made a string literal in source the
+easiest thing to write. Paul's design went further than the audit asked: `configure()` takes nothing.
+The relay URL comes from an obfuscated `Secrets.swift` (from his `obfuscate` tool), and the token from
+the host's Info.plist key `ClarityFeedbackAppToken`, set from an `.xcconfig` that's never committed.
+Removing the old `configure(ingestURL:appToken:)` made it 2.0.0; hosts on `from: "1.0.0"` stay put
+until they choose to move. One catch on the way: the new `Secrets.swift` had landed in `Sources/`, not
+`Sources/ClarityFeedbackKit/`, where SwiftPM would never have compiled it.
+
+A smaller catch: the new configuration tests reset the global configuration while another suite's
+test relied on it, the same race as #435. Every test that touches the global now lives in the one
+`.serialized` suite.
+
+**Lesson: if the safe way is also the only way, nobody has to remember to choose it.**
+
 ## Engineer's Wisdom
 
 - **A credential's scope should match its exposure.** This package never holds anything more powerful than a single per-app token that can only create issues on one repo, because it's the one component of the system that actually ships to end-users.
