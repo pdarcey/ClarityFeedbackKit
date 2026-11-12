@@ -12,5 +12,3 @@ import Foundation
 protocol URLRequestPerforming: Sendable {
     func data(for request: URLRequest) async throws -> (Data, URLResponse)
 }
-
-extension URLSession: URLRequestPerforming {}

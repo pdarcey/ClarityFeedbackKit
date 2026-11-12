@@ -9,10 +9,11 @@ import SwiftUI
 
 private let logger = Logger(subsystem: "com.xerodonia.ClarityFeedbackKit", category: "ReportIssueView")
 
-/// A ready-made "Report a Bug" form. Present it as a sheet from your app's UI — it handles
-/// submission, in-flight state, and success/error feedback itself. Call
-/// ``ClarityFeedback/configure(ingestURL:appToken:)`` once, earlier in app launch, before
-/// presenting this.
+/// A ready-made "Report a Bug" form. It handles submission, in-flight state, and
+/// success/error feedback itself. On iOS and iPadOS present it as a sheet; on macOS give it
+/// its own `Window` scene (see the Readme), because it closes itself with `dismissWindow()`
+/// there (#257). Call ``ClarityFeedback/configure(bundle:)`` once, earlier in app launch,
+/// and only offer this when ``ClarityFeedback/isConfigured`` is `true`.
 ///
 /// v1 is text-only: title + description, plus an automatic app/OS/device metadata footer.
 /// There's no screenshot/attachment support yet — GitHub's Issues REST API has no

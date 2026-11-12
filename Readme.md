@@ -2,7 +2,7 @@
 name: ClarityFeedbackKit
 description: A tiny Swift package that lets an app's users send a bug report or idea straight to the developer as a GitHub issue, which Clarity then imports automatically.
 version: "1.0.0"
-readmeUpdated: 2026-11-01
+readmeUpdated: 2026-11-12
 tags:
   - Package
 ---
@@ -36,7 +36,7 @@ Add it by URL (in Xcode: File › Add Package Dependencies…, or in a
 `Package.swift`):
 
 ```swift
-.package(url: "https://github.com/pdarcey/ClarityFeedbackKit", from: "1.0.0")
+.package(url: "https://github.com/pdarcey/ClarityFeedbackKit", from: "2.0.0")
 ```
 
 Then add the `ClarityFeedbackKit` library product to your **app** target.
@@ -54,16 +54,20 @@ Configure once, early in app launch (e.g. in your `App`'s `init()`):
 ```swift
 import ClarityFeedbackKit
 
-ClarityFeedback.configure(
-    ingestURL: URL(string: "https://clarity-feedback-relay.<your-subdomain>.workers.dev/v1/feedback")!,
-    appToken: "<this app's ingest token>"
-)
+init() {
+    ClarityFeedback.configure()
+}
 ```
 
-`configure` is synchronous and thread-safe, so it's fine to call from an
-`App`'s `init()` (which isn't main-actor-isolated) or anywhere else. The
-configuration is only read when a report is submitted, and calling
-`configure` again replaces the previous values.
+`configure()` takes no values. The relay's endpoint is built into the package
+(obfuscated, in `Secrets.swift`), and this app's ingest token comes from your
+app's Info.plist (see "Setting up the ingest token" below). If the token is
+missing, `configure()` logs a warning, leaves feedback unconfigured and returns
+`false`, rather than crashing.
+
+`configure()` is synchronous and thread-safe, so it's fine to call from an
+`App`'s `init()` (which isn't main-actor-isolated) or anywhere else. Calling
+it again replaces the previous values.
 
 Then present the ready-made form from anywhere. `ReportIssueView` closes itself
 (Cancel/Done) using whatever dismissal mechanism matches how it's presented, so
@@ -94,41 +98,34 @@ On macOS, the form's Cancel and Done buttons close it with `dismissWindow()`,
 which is made for a window scene, not a sheet. Present it in its own `Window`
 as shown above. On iOS they use `dismiss()`, which is what closes a sheet.
 
-That's the entire public API: `ClarityFeedback.configure(ingestURL:appToken:)`,
-`ClarityFeedback.isConfigured`, and `ReportIssueView`.
+That's the entire public API: `ClarityFeedback.configure(bundle:)` (call it as
+`configure()`), `ClarityFeedback.isConfigured`, `ClarityFeedback.appTokenInfoPlistKey`
+and `ReportIssueView`.
 
-### Handling the ingest token
+### Setting up the ingest token
 
-You need two values from whoever runs the relay:
+Every host app gets its token from an `.xcconfig` that is **never committed**.
+There's no way to pass the token in code (since 2.0.0), so it can't end up in
+source or git history.
 
-| Value | What it is | Secret? |
-|---|---|---|
-| `ingestURL` | The relay's `/v1/feedback` endpoint | No — fine to keep in source |
-| `appToken` | This app's ingest token, issued once per app | Yes — keep it out of source control |
+1. Ask whoever runs the relay for this app's ingest token.
+2. Create `Secrets.xcconfig` next to the project, and add it to `.gitignore`:
 
-`appToken` is scoped to creating issues on one repo, but it's still a
-credential — don't commit it as a string literal the way the example above
-shows for brevity. Anything committed to source ends up in your git history,
-which matters if the repo is ever shared or made public.
+   ```
+   // Secrets.xcconfig: NOT committed (it's in .gitignore)
+   CLARITY_FEEDBACK_APP_TOKEN = <this app's ingest token>
+   ```
 
-Pull it in at build time instead, e.g. via an `.xcconfig` (kept out of source
-control) that sets a build setting, which an `Info.plist` key then
-references (`ClarityFeedbackAppToken` = `$(CLARITY_FEEDBACK_APP_TOKEN)`).
-Read it back at launch:
+3. In the project's Info tab, set it as the configuration file for Debug and
+   Release (or `#include` it from an existing `.xcconfig`).
+4. Add the Info.plist key `ClarityFeedbackAppToken` (a String) with the value
+   `$(CLARITY_FEEDBACK_APP_TOKEN)`. Or, with a generated Info.plist, add the
+   build setting `INFOPLIST_KEY_ClarityFeedbackAppToken = $(CLARITY_FEEDBACK_APP_TOKEN)`.
+5. Call `ClarityFeedback.configure()` at launch.
 
-```swift
-init() {
-    let ingestURL = URL(string: "https://clarity-feedback-relay.<your-subdomain>.workers.dev/v1/feedback")!
-    if let appToken = Bundle.main.object(forInfoDictionaryKey: "ClarityFeedbackAppToken") as? String,
-       !appToken.isEmpty {
-        ClarityFeedback.configure(ingestURL: ingestURL, appToken: appToken)
-    }
-}
-```
-
-If the token is missing (say, a contributor's build without the
-`.xcconfig`), skip `configure` rather than crashing, and use
-`ClarityFeedback.isConfigured` to hide your "Report a Bug" entry point:
+A build without the `.xcconfig` (say, a fresh clone, or CI without the
+secret) has an empty key, so `configure()` returns `false`. Use
+`ClarityFeedback.isConfigured` to hide your "Report a Bug" entry point then:
 
 ```swift
 if ClarityFeedback.isConfigured {
@@ -136,32 +133,36 @@ if ClarityFeedback.isConfigured {
 }
 ```
 
-This matters because `ReportIssueView` doesn't check configuration itself.
-An unconfigured submission fails with a developer-facing error message that
-your end users would see.
+`ReportIssueView` doesn't check configuration itself. An unconfigured
+submission only tells the user "Feedback isn't set up in this app."
 
-Any equivalent scheme works just as well (a CI-injected build setting, for
-example). The point is to keep the token out of source and out of git history,
-the same way you'd handle a Sentry DSN.
-Build-time injection does **not** hide the token from the shipped app,
-though: it still ends up in the app bundle, and a determined user can extract
-it. That's acceptable only because the token can do so little (create issues
-on one repo) and the relay can revoke it per app. Never put anything more
-powerful, such as a GitHub PAT, in a host app.
+For CI, write the same `.xcconfig` from a CI secret before building.
+
+The token still ships inside the app bundle, and a determined user can
+extract it. That's accepted: the token can only create issues on one repo, the
+relay rate-limits it and can revoke it per app, and no GitHub credential is
+ever in a host app. The relay URL in `Secrets.swift` is only obfuscated too,
+and this repo is public, so treat the URL as discoverable.
 
 ## What it does
 
 `ReportIssueView` is a title + description form. On submit, it POSTs
 `{title, body, appVersion, osVersion, deviceModel}` to the configured relay
-URL with `Authorization: Bearer <appToken>`, then shows either a simple
+URL with `Authorization: Bearer <ingest token>`, then shows either a simple
 "Thanks for the report!" confirmation, or an inline error with the option
 to retry (there's no automatic retry or offline queue in v1 — if the POST
 fails, the user sees why and can try again).
 
-That inline error is shown to the user word for word. That includes the
-relay's own `error` string when it rejects a submission. So whoever runs the
-relay should make its error messages suitable for end users, and never pass
-a raw GitHub API error through.
+That inline error is always one of three fixed messages (since 2.0.0, #680):
+"Couldn’t send your report. Check your connection and try again." when the
+request got no answer; "Feedback isn’t set up in this app." when `configure()`
+hasn't succeeded; and "The feedback service couldn’t accept your report right
+now. Try again later." for anything else, including the relay's rate limit.
+The relay's own `error` text and the network error go to the log (category
+`FeedbackClient`), never to the user, so nothing can reveal the GitHub repo.
+
+Redirects are refused (#679): the report and token only ever go to the
+relay's URL. A 3xx from the relay is a failure, and its `Location` is logged.
 
 The confirmation deliberately doesn't link to the created GitHub issue —
 that repo is your internal plumbing (and may be private), not something your
