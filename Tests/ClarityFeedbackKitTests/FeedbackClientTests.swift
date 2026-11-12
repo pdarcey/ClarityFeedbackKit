@@ -13,10 +13,12 @@ import Testing
 /// `GitHubIssueImporterTests` uses for the same seam.
 final class StubURLRequestPerforming: URLRequestPerforming, @unchecked Sendable {
     var lastRequest: URLRequest?
+    var requestCount = 0
     var result: Result<(Data, URLResponse), Error> = .failure(URLError(.unknown))
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         lastRequest = request
+        requestCount += 1
         return try result.get()
     }
 }
@@ -40,7 +42,7 @@ struct FeedbackClientTests {
         let stub = StubURLRequestPerforming()
         let client = FeedbackClient(session: stub, configurationProvider: { nil })
 
-        await #expect(throws: FeedbackClient.SubmissionError.notConfigured) {
+        await #expect(throws: SubmissionError.notConfigured) {
             _ = try await client.submit(title: "Bug", body: "It broke")
         }
     }
@@ -88,7 +90,7 @@ struct FeedbackClientTests {
         #expect(url == URL(string: "https://github.com/pdarcey/Clarity/issues/42"))
     }
 
-    @Test("Throws .server with the relay's error message on a non-201 response")
+    @Test("Throws .server with the relay's status and message on a non-201 response")
     func throwsServerErrorOnRejection() async throws {
         let stub = StubURLRequestPerforming()
         let errorBody = try JSONEncoder().encode(
@@ -97,7 +99,7 @@ struct FeedbackClientTests {
         stub.result = .success((errorBody, response(status: 401)))
         let client = FeedbackClient(session: stub, configurationProvider: { self.testConfiguration })
 
-        await #expect(throws: FeedbackClient.SubmissionError.server("Invalid ingest token.")) {
+        await #expect(throws: SubmissionError.server(status: 401, detail: "Invalid ingest token.")) {
             _ = try await client.submit(title: "Bug", body: "It broke")
         }
     }
@@ -108,7 +110,7 @@ struct FeedbackClientTests {
         stub.result = .failure(URLError(.notConnectedToInternet))
         let client = FeedbackClient(session: stub, configurationProvider: { self.testConfiguration })
 
-        await #expect(throws: FeedbackClient.SubmissionError.self) {
+        await #expect(throws: SubmissionError.network(URLError(.notConnectedToInternet).localizedDescription)) {
             _ = try await client.submit(title: "Bug", body: "It broke")
         }
     }
@@ -119,25 +121,63 @@ struct FeedbackClientTests {
         stub.result = .success((Data("not json".utf8), response(status: 500)))
         let client = FeedbackClient(session: stub, configurationProvider: { self.testConfiguration })
 
-        await #expect(throws: FeedbackClient.SubmissionError.self) {
+        await #expect(throws: SubmissionError.server(status: 500, detail: "Unexpected response body.")) {
             _ = try await client.submit(title: "Bug", body: "It broke")
         }
     }
 
-    @Test("Uses the real global ClarityFeedback.configuration by default")
-    func defaultsToGlobalConfiguration() async throws {
-        ClarityFeedback.configure(ingestURL: testConfiguration.ingestURL, appToken: testConfiguration.appToken)
+    @Test("Refuses a redirect: fails, with no second request (#679)")
+    func refusesRedirects() async {
         let stub = StubURLRequestPerforming()
-        let successBody = try JSONEncoder().encode(
-            FeedbackSubmissionResponse(
-                succeeded: true, url: "https://github.com/pdarcey/Clarity/issues/1", number: 1, error: nil
-            )
+        let redirect = HTTPURLResponse(
+            url: testConfiguration.ingestURL, statusCode: 307, httpVersion: nil,
+            headerFields: ["Location": "https://elsewhere.example.com/collect"]
+        )!
+        stub.result = .success((Data(), redirect))
+        let client = FeedbackClient(session: stub, configurationProvider: { self.testConfiguration })
+
+        let expected = SubmissionError.redirected(status: 307, location: "https://elsewhere.example.com/collect")
+        await #expect(throws: expected) {
+            _ = try await client.submit(title: "Bug", body: "It broke")
+        }
+        #expect(stub.requestCount == 1)
+    }
+
+    @Test("The real network path refuses redirects (#679)")
+    func realSessionRefusesRedirects() async {
+        let delegate = NoRedirectDelegate()
+        let request = URLRequest(url: URL(string: "https://elsewhere.example.com")!)
+        let response = HTTPURLResponse(
+            url: testConfiguration.ingestURL, statusCode: 307, httpVersion: nil, headerFields: nil
+        )!
+        let task = URLSession.shared.dataTask(with: request)
+        let next = await delegate.urlSession(
+            .shared, task: task, willPerformHTTPRedirection: response, newRequest: request
         )
-        stub.result = .success((successBody, response(status: 201)))
-        let client = FeedbackClient(session: stub)
+        #expect(next == nil)
+        #expect(FeedbackClient().usesNoRedirectSession)
+    }
 
-        _ = try await client.submit(title: "Bug", body: "It broke")
+    @Test(
+        "Users only ever see a fixed message, never the relay's or the network's text (#680)",
+        arguments: [
+            SubmissionError.server(status: 502, detail: "GitHub rejected the issue: Not Found pdarcey/SecretRepo"),
+            .server(status: 429, detail: "Rate limit exceeded. Try again shortly."),
+            .redirected(status: 307, location: "https://elsewhere.example.com"),
+            .encoding("bad data"),
+            .network("Could not connect to https://relay.example.com/v1/feedback")
+        ]
+    )
+    func userMessagesAreFixed(error: SubmissionError) throws {
+        let message = try #require(error.errorDescription)
+        #expect([SubmissionError.serviceMessage, SubmissionError.connectionMessage].contains(message))
+        #expect(!message.contains("GitHub"))
+        #expect(!message.contains("relay.example.com"))
+    }
 
-        #expect(stub.lastRequest?.value(forHTTPHeaderField: "Authorization") == "Bearer test-ingest-token")
+    @Test("A rate limit (429) gets the same message as any other relay failure (#680)")
+    func rateLimitMessageIsTheServiceMessage() {
+        #expect(SubmissionError.server(status: 429, detail: "x").errorDescription == SubmissionError.serviceMessage)
+        #expect(SubmissionError.notConfigured.errorDescription == SubmissionError.notConfiguredMessage)
     }
 }
