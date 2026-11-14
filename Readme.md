@@ -2,7 +2,7 @@
 name: ClarityFeedbackKit
 description: A tiny Swift package that lets an app's users send a bug report or idea straight to the developer as a GitHub issue, which Clarity then imports automatically.
 version: "2.0.0"
-readmeUpdated: 2026-11-12
+readmeUpdated: 2026-11-15
 tags:
   - Package
 ---
@@ -67,7 +67,8 @@ missing, `configure()` logs a warning, leaves feedback unconfigured and returns
 
 `configure()` is synchronous and thread-safe, so it's fine to call from an
 `App`'s `init()` (which isn't main-actor-isolated) or anywhere else. Calling
-it again replaces the previous values.
+it again replaces the previous values, and a call that fails leaves feedback
+unconfigured.
 
 Then present the ready-made form from anywhere. `ReportIssueView` closes itself
 (Cancel/Done) using whatever dismissal mechanism matches how it's presented, so
@@ -150,7 +151,7 @@ and this repo is public, so treat the URL as discoverable.
 `{title, body, appVersion, osVersion, deviceModel}` to the configured relay
 URL with `Authorization: Bearer <ingest token>`, then shows either a simple
 "Thanks for the report!" confirmation, or an inline error with the option
-to retry (there's no automatic retry or offline queue in v1 — if the POST
+to retry (there's no automatic retry or offline queue yet — if the POST
 fails, the user sees why and can try again).
 
 That inline error is always one of three fixed messages (since 2.0.0, #680):
@@ -174,7 +175,7 @@ still trace a report while developing.
 `deviceModel` via `uname(2)` (a raw hardware identifier like `"iPhone15,3"`,
 not a friendly name), so the package never imports UIKit.
 
-## What it deliberately doesn't do (v1)
+## What it deliberately doesn't do (yet)
 
 - **No screenshot/attachment support.** GitHub's Issues REST API has no
   first-party attachment endpoint; solving that cleanly needs blob storage

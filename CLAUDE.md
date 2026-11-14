@@ -68,7 +68,7 @@ integration instructions, including how a host app should supply that token.
   (`ClarityStorage`, Clarity itself).
 - Logging via `OSLog`/`Logger` (subsystem
   `com.xerodonia.ClarityFeedbackKit`, one category per file —
-  `FeedbackClient`, `ReportIssueView`), never `print()`.
+  `ClarityFeedback`, `FeedbackClient`, `ReportIssueView`), never `print()`.
 - **Never show GitHub to end users.** The success screen confirms the
   report was sent and nothing more — the created issue's URL is logged, not
   displayed. The GitHub repo is the developer's internal plumbing (and may
