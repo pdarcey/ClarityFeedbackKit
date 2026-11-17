@@ -14,13 +14,20 @@ let package = Package(
             targets: ["ClarityFeedbackKit"]
         )
     ],
+    dependencies: [
+        // Test-only: links tests written for a bug to their Clarity issue.
+        .package(url: "https://github.com/pdarcey/ClarityLinks", from: "1.0.0")
+    ],
     targets: [
         .target(
             name: "ClarityFeedbackKit"
         ),
         .testTarget(
             name: "ClarityFeedbackKitTests",
-            dependencies: ["ClarityFeedbackKit"]
+            dependencies: [
+                "ClarityFeedbackKit",
+                .product(name: "ClarityTesting", package: "ClarityLinks")
+            ]
         )
     ]
 )

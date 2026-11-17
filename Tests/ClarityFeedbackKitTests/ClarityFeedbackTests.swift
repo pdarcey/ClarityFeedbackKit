@@ -5,6 +5,7 @@
    © 2026 Xerodonia Pty Ltd. All rights reserved
 ------------------------------------------------ */
 import Foundation
+import ClarityTesting
 import Testing
 @testable import ClarityFeedbackKit
 
@@ -21,7 +22,8 @@ struct ClarityFeedbackTests {
     }
 
     @Test(
-        "configure stays unconfigured without a usable token (#255)",
+        "configure stays unconfigured without a usable token",
+        .clarity(255, "configure() nudged hosts to hardcode the token"),
         arguments: [nil, "", "   ", "$(CLARITY_FEEDBACK_APP_TOKEN)"] as [String?]
     )
     func configureRejectsMissingTokens(token: String?) {

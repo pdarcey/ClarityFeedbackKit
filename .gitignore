@@ -3,3 +3,12 @@
 .swiftpm/
 *.xcodeproj
 Package.resolved
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Claude local files
+.claude/settings.local.json
+CLAUDE.local.md

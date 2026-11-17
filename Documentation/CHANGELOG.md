@@ -2,6 +2,15 @@
 
 All notable changes to this project, newest first. Generated from the git history by `generate-changelog.py`.
 
+## Unreleased
+
+### Documentation
+
+- Refresh docs from the 15 Nov docs check ([`9e544f3`](https://github.com/pdarcey/ClarityFeedbackKit/commit/9e544f3e6208231fb477b337deab7bdbdc8eedc4))
+- Journal for 2.0.0 (12 Nov 2026) ([`7655496`](https://github.com/pdarcey/ClarityFeedbackKit/commit/765549697b974e3dbe9f8a606371721626ab10cf))
+
+**Contributors:** Paul Darcey
+
 ## [2.0.0] - 2026-11-12
 
 ### Breaking Changes

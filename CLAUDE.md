@@ -128,8 +128,11 @@ swiftlint
   Pushing to `main` alone doesn't ship anything to hosts. A change to
   `Sources/` only reaches them once a new tag is cut, and any change to the
   public API needs a version bump to match.
-- The test target doesn't link `ClarityTesting` (from `ClarityLinks`) yet,
-  although the ecosystem convention is to link it into every Swift Testing
-  target. Adding it means editing `Package.swift`.
-- See `Journal.md` for the fuller story behind each of these decisions,
+- The test target links `ClarityTesting` (from `ClarityLinks`, by URL, since
+  17 Nov 2026). A test written because of a bug is tagged
+  `@Test("…", .clarity(<issue>, "short title"))`; other tests aren't. Never
+  add it to the library target: it imports `Testing`.
+- `Documentation/` holds `Plan.md`, `Status.md`, `Journal.md` and the
+  generated `CHANGELOG.md`.
+- See `Documentation/Journal.md` for the fuller story behind each of these decisions,
   including the bugs that surfaced them.

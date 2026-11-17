@@ -5,6 +5,7 @@
    © 2026 Xerodonia Pty Ltd. All rights reserved
 ------------------------------------------------ */
 import Foundation
+import ClarityTesting
 import Testing
 @testable import ClarityFeedbackKit
 
@@ -126,7 +127,10 @@ struct FeedbackClientTests {
         }
     }
 
-    @Test("Refuses a redirect: fails, with no second request (#679)")
+    @Test(
+        "Refuses a redirect: fails, with no second request",
+        .clarity(679, "Redirects could forward the token and report")
+    )
     func refusesRedirects() async {
         let stub = StubURLRequestPerforming()
         let redirect = HTTPURLResponse(
@@ -143,7 +147,10 @@ struct FeedbackClientTests {
         #expect(stub.requestCount == 1)
     }
 
-    @Test("The real network path refuses redirects (#679)")
+    @Test(
+        "The real network path refuses redirects",
+        .clarity(679, "Redirects could forward the token and report")
+    )
     func realSessionRefusesRedirects() async {
         let delegate = NoRedirectDelegate()
         let request = URLRequest(url: URL(string: "https://elsewhere.example.com")!)
@@ -159,7 +166,8 @@ struct FeedbackClientTests {
     }
 
     @Test(
-        "Users only ever see a fixed message, never the relay's or the network's text (#680)",
+        "Users only ever see a fixed message, never the relay's or the network's text",
+        .clarity(680, "Relay and network error text shown to users"),
         arguments: [
             SubmissionError.server(status: 502, detail: "GitHub rejected the issue: Not Found pdarcey/SecretRepo"),
             .server(status: 429, detail: "Rate limit exceeded. Try again shortly."),
@@ -175,7 +183,10 @@ struct FeedbackClientTests {
         #expect(!message.contains("relay.example.com"))
     }
 
-    @Test("A rate limit (429) gets the same message as any other relay failure (#680)")
+    @Test(
+        "A rate limit (429) gets the same message as any other relay failure",
+        .clarity(680, "Relay and network error text shown to users")
+    )
     func rateLimitMessageIsTheServiceMessage() {
         #expect(SubmissionError.server(status: 429, detail: "x").errorDescription == SubmissionError.serviceMessage)
         #expect(SubmissionError.notConfigured.errorDescription == SubmissionError.notConfiguredMessage)
